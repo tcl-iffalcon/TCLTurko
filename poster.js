@@ -36,26 +36,145 @@ const GENRE_MAP = {
   10767: "talk", 10768: "war & politics"
 };
 
+// ─── Genre styles ─────────────────────────────────────────────────────────────
 const GENRE_STYLES = {
-  horror:               "terrifying 1970s horror movie poster, dark gothic atmosphere, deep crimson black shadows, menacing figures, dripping paint texture, screaming bold title, painted illustration",
-  thriller:             "1960s psychological thriller painted poster, cold blue grey palette, tense shadowy figures, paranoid atmosphere, stark contrast, bold condensed title",
-  "science fiction":    "retro 1950s sci-fi painted movie poster, deep space blues purples, futuristic characters and technology, dramatic cosmic scene, bold retro-futurist typography",
-  "sci-fi & fantasy":   "retro 1950s sci-fi painted movie poster, deep space blues purples, futuristic characters and technology, dramatic cosmic scene, bold retro-futurist typography",
-  action:               "explosive 1980s action movie painted poster, intense orange red fiery palette, heroic muscular figures, dramatic explosion background, bold aggressive title typography",
-  "action & adventure": "explosive 1980s action movie painted poster, intense orange red fiery palette, heroic figures in combat, dramatic scene, bold aggressive title typography",
-  adventure:            "classic 1950s adventure painted movie poster, rich jungle greens golden yellows, heroic explorer figures, exotic dramatic scene, bold adventurous title",
-  romance:              "elegant 1940s romantic painted movie poster, soft warm rose gold ivory palette, glamorous couple, dreamy atmosphere, flowing art nouveau typography",
-  comedy:               "fun vintage 1960s comedy painted movie poster, bright cheerful warm palette, expressive comedic characters, playful scene, bold colorful title",
-  animation:            "vintage 1950s illustrated movie poster, vibrant jewel tone colors, whimsical characters, magical scene, bold playful retro title typography",
-  fantasy:              "epic fantasy painted movie poster, deep jewel tones purple gold emerald, mythical characters and creatures, grand dramatic scene, ornate fantasy typography",
-  crime:                "1940s film noir painted movie poster, dramatic high contrast, deep blacks cool blues, shadowy detective figures, smoky atmosphere, classic noir typography",
-  drama:                "classic Hollywood 1950s painted drama poster, warm amber crimson cream palette, expressive emotional characters, intimate cinematic scene, elegant serif title",
-  war:                  "powerful 1940s war painted movie poster, muted olive grey brown palette, soldiers in dramatic battle scene, gritty atmosphere, bold patriotic typography",
-  western:              "classic 1960s western painted movie poster, warm dusty desert palette, lone cowboy silhouette, dramatic sunset, bold slab serif title typography",
-  history:              "epic historical painted movie poster, rich earthy tones gold bronze, period-accurate costumes and setting, grand dramatic composition, classical typography",
-  mystery:              "atmospheric 1950s mystery painted poster, moody blue purple shadows, mysterious figure in fog, suspenseful composition, elegant serif title",
-  family:               "warm vintage 1950s family adventure poster, bright cheerful palette, wholesome characters in exciting scene, friendly retro typography"
+  horror: {
+    mood:    "terrifying, psychologically disturbing, pure dread",
+    palette: "near-black shadows, icy desaturated blues, single harsh beam of light, deep crimson accents",
+    lighting: "extreme chiaroscuro, single source horror lighting, long menacing shadows",
+  },
+  thriller: {
+    mood:    "paranoid, tense, dangerous, unpredictable",
+    palette: "cold steel blues, charcoal greys, sickly yellow streetlight, heavy shadows",
+    lighting: "noir-style underlit, harsh side lighting, shadowy silhouettes",
+  },
+  "science fiction": {
+    mood:    "awe-inspiring, vast, lonely, futuristic",
+    palette: "deep space blacks, electric blues, neon cyan accents, warm orange planet glow",
+    lighting: "volumetric light rays, soft bioluminescent glow, dramatic rim lighting",
+  },
+  "sci-fi & fantasy": {
+    mood:    "epic, otherworldly, mythic, awe-inspiring",
+    palette: "deep cosmic purples, electric blues, gold and amber accents, glowing runes",
+    lighting: "dramatic magical lighting, god rays, glowing energy sources",
+  },
+  action: {
+    mood:    "explosive, intense, relentless, heroic",
+    palette: "fiery oranges, deep blacks, intense reds, smoldering smoke tones",
+    lighting: "high contrast explosion backlight, dramatic rim light on hero, dynamic motion blur",
+  },
+  "action & adventure": {
+    mood:    "thrilling, dangerous, epic, high-stakes",
+    palette: "warm golden dust, deep shadows, explosive orange, cool steel blues",
+    lighting: "cinematic golden hour backlight, dramatic contrast, hero silhouette",
+  },
+  adventure: {
+    mood:    "epic, grand, exciting, larger than life",
+    palette: "rich jungle greens, warm golden sunlight, dramatic sky blues, earthy tones",
+    lighting: "dramatic natural sunlight, long golden shadows, volumetric rays through trees",
+  },
+  romance: {
+    mood:    "intimate, passionate, emotionally charged, bittersweet",
+    palette: "warm amber, soft rose gold, candlelight ivory, deep shadow blues",
+    lighting: "soft warm practical lighting, intimate candlelight, gentle bokeh background",
+  },
+  comedy: {
+    mood:    "energetic, fun, vibrant, charismatic",
+    palette: "warm bright tones, vivid saturated colors, clean whites, playful accents",
+    lighting: "bright even lighting, clean studio look, warm cheerful tones",
+  },
+  animation: {
+    mood:    "magical, vibrant, imaginative, wondrous",
+    palette: "vivid jewel tones, luminous glowing colors, rich saturated hues",
+    lighting: "magical glowing light sources, volumetric sparkles, warm magical atmosphere",
+  },
+  fantasy: {
+    mood:    "epic, mythical, grand, mystical",
+    palette: "deep jewel purples, emerald greens, molten gold, ancient bronze",
+    lighting: "dramatic magical lighting, god rays, fire and mystical energy glow",
+  },
+  crime: {
+    mood:    "gritty, dark, morally complex, dangerous",
+    palette: "wet asphalt blues, harsh neon signs, deep blacks, smoky greys",
+    lighting: "harsh neon backlight, wet pavement reflections, deep noir shadows",
+  },
+  drama: {
+    mood:    "emotionally intense, raw, deeply human, powerful",
+    palette: "warm amber and shadow, muted earth tones, deep contrast",
+    lighting: "intimate natural window light, soft dramatic shadows, emotional close-up lighting",
+  },
+  war: {
+    mood:    "gritty, brutal, heroic, devastating",
+    palette: "muted olive greens, smoke greys, blood reds, harsh whites",
+    lighting: "harsh battlefield lighting, explosion rim light, smoke diffusion, overcast grey",
+  },
+  western: {
+    mood:    "rugged, lonely, epic, dusty, timeless",
+    palette: "warm desert golds, burnt orange, dust brown, deep sunset reds",
+    lighting: "dramatic desert sunset backlight, long golden shadows, harsh midday sun",
+  },
+  history: {
+    mood:    "grand, epic, timeless, powerful",
+    palette: "rich warm golds, deep earthy browns, aged bronze, deep shadow blacks",
+    lighting: "dramatic torchlight or sunlight, period-accurate natural lighting, painterly shadows",
+  },
+  mystery: {
+    mood:    "suspicious, atmospheric, enigmatic, unsettling",
+    palette: "deep foggy blues, muted greens, amber lamplight, heavy shadows",
+    lighting: "atmospheric fog diffusion, single practical lamp, heavy vignette shadows",
+  },
+  family: {
+    mood:    "warm, exciting, heartfelt, adventurous",
+    palette: "warm sunny yellows, vivid blues, rich greens, bright cheerful tones",
+    lighting: "warm golden natural light, bright and inviting, soft shadows",
+  },
+  default: {
+    mood:    "cinematic, dramatic, powerful, atmospheric",
+    palette: "rich deep tones, dramatic contrast, cinematic color grading",
+    lighting: "dramatic cinematic lighting, strong shadows, professional film look",
+  }
 };
+
+// ─── Prompt builder ───────────────────────────────────────────────────────────
+function buildPrompt(title, year, type, genreIds, overview) {
+  const ids        = (genreIds || "").split(",").map(Number).filter(Boolean);
+  const genreNames = ids.map(id => GENRE_MAP[id]).filter(Boolean);
+  const primary    = genreNames[0] || "default";
+  const s          = GENRE_STYLES[primary] || GENRE_STYLES.default;
+  const mediaLabel = type === "series" ? "TV series" : "film";
+  const plotHint   = overview ? overview.substring(0, 100) : "";
+
+  const prompt = [
+    // Temel stil — gerçekçi sinematik fotoğraf
+    "ultra-realistic cinematic movie poster photograph",
+    "photorealistic hyperdetailed 8K professional film poster",
+
+    // İçerik
+    `poster for the ${mediaLabel} "${title}"${year ? ` (${year})` : ""}`,
+    plotHint ? `visual theme: ${plotHint}` : "",
+
+    // Tür'e özgü atmosfer
+    `mood: ${s.mood}`,
+    `color palette: ${s.palette}`,
+    `lighting: ${s.lighting}`,
+
+    // Karakter kalitesi
+    "photorealistic human characters with sharp detailed faces",
+    "cinematic depth of field, sharp foreground soft background",
+    "professional Hollywood movie poster composition",
+    "dramatic hero shot, characters in powerful poses",
+
+    // Teknik kalite
+    "shot on ARRI camera, anamorphic lens flare",
+    "cinematic color grading, deep blacks, rich shadows",
+    "portrait 2:3 aspect ratio",
+
+    // Negatif
+    "NO text, NO title, NO watermark, NO cartoon, NO illustration, NO painting, NO anime, NO vintage, NO retro, NO flat design"
+  ].filter(Boolean).join(", ");
+
+  return { prompt, styleLabel: primary };
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
