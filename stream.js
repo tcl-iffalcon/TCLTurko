@@ -1,4 +1,3 @@
-
 const fetch   = require("node-fetch");
 const sinewix = require("./providers/sinewix");
 
@@ -26,11 +25,18 @@ async function fetchStreams(id, type) {
   let seasonNum  = null;
   let episodeNum = null;
 
+  // Dizi bölümü parse et: tt1234567:2:5
   if (!isMovie && id.includes(":")) {
     const parts = id.split(":");
     id         = parts[0];
     seasonNum  = parseInt(parts[1]);
     episodeNum = parseInt(parts[2]);
+  }
+
+  // Dizi ama bölüm bilgisi yoksa stream döndürme
+  if (!isMovie && (!seasonNum || !episodeNum)) {
+    console.log(`[Stream] Dizi için bölüm bilgisi yok, atlanıyor: ${id}`);
+    return [];
   }
 
   const tmdbId = await resolveTmdbId(id, type);
@@ -49,12 +55,6 @@ async function fetchStreams(id, type) {
     name:  s.name  || "🇹🇷 Sinewix",
     title: s.title || "",
     url:   s.url,
-    behaviorHints: {
-      notWebReady: true,
-      proxyHeaders: {
-        request: s.headers || {},
-      },
-    },
   }));
 }
 
