@@ -2,9 +2,9 @@ const fetch = require("node-fetch");
 const crypto = require("crypto");
 
 // ─── Cloudinary Config ────────────────────────────────────────────────────────
-const CLD_CLOUD  = process.env.CLD_CLOUD  || "retromio";
-const CLD_KEY    = process.env.CLD_KEY    || "276591239885363";
-const CLD_SECRET = process.env.CLD_SECRET || "eTu9x75UoJR-EKsWVkh_WnTCGN0";
+const CLD_CLOUD  = process.env.CLD_CLOUD  || "TCLTURKO";
+const CLD_KEY    = process.env.CLD_KEY    || "378592846311688";
+const CLD_SECRET = process.env.CLD_SECRET || "yeAi5aYoWfch8N1SlgB1v0Dp5Lc";
 const CLD_FOLDER = "posters";
 const CLD_BASE   = `https://res.cloudinary.com/${CLD_CLOUD}/image/upload/${CLD_FOLDER}`;
 
