@@ -1,8 +1,8 @@
 {
   "id": "com.retromio.addon",
-  "version": "2.0.0",
-  "name": "Retromio",
-  "description": "AI posterler + Türkçe dublaj bayrağı. Sinewix ile Türkçe içerik sunar.",
+  "version": "1.0.0",
+  "name": "TCLTurko",
+  "description": "TCLTVTURK ekibi tarafından geliştirilmişir.",
   "logo": "https://img.icons8.com/fluency/96/retro-tv.png",
   "background": "https://img.icons8.com/fluency/512/retro-tv.png",
   "resources": ["catalog", "meta", "stream"],
