@@ -135,6 +135,60 @@ const GENRE_STYLES = {
   }
 };
 
+// ─── Artistic style variants (her film farklı görünsün) ──────────────────────
+const ARTISTIC_STYLES = [
+  {
+    label: "vintage_painted",
+    base:  "classic 1950s Hollywood hand-painted movie poster, oil painting illustration style, rich warm brushstrokes, dramatic painted characters",
+    tech:  "painterly oil texture, warm amber palette, vintage grain overlay",
+  },
+  {
+    label: "retro_pulp",
+    base:  "1960s retro pulp fiction paperback cover art, bold graphic illustration, high contrast flat colors, dramatic pulp composition",
+    tech:  "strong ink outlines, flat cel shading, bold red and yellow accents, halftone texture",
+  },
+  {
+    label: "noir_illustrated",
+    base:  "dark noir illustrated movie poster, moody ink wash illustration, dramatic black and white with selective color, hard-boiled aesthetic",
+    tech:  "heavy black shadows, single color accent, wet street reflections, noir atmosphere",
+  },
+  {
+    label: "epic_photorealistic",
+    base:  "ultra-realistic cinematic movie poster photograph, photorealistic hyperdetailed 8K professional film poster, shot on ARRI camera anamorphic lens",
+    tech:  "dramatic rim lighting, deep blacks, cinematic color grading, anamorphic lens flare",
+  },
+  {
+    label: "painterly_epic",
+    base:  "epic fantasy concept art painting style movie poster, highly detailed digital oil painting, dramatic painterly illustration",
+    tech:  "rich jewel tones, dramatic god rays, painterly brush detail, epic cinematic scale",
+  },
+  {
+    label: "retro_scifi",
+    base:  "1970s retro science fiction movie poster, vintage sci-fi paperback illustration, chrome and neon palette, retrofuturism aesthetic",
+    tech:  "chrome highlights, deep space blacks, neon glow, vintage halftone dots",
+  },
+  {
+    label: "graphic_novel",
+    base:  "graphic novel comic book movie poster, bold sequential art illustration style, strong dynamic composition",
+    tech:  "bold ink lines, vibrant flat colors with texture, dramatic panel composition",
+  },
+  {
+    label: "watercolor_atmospheric",
+    base:  "atmospheric watercolor illustration movie poster, loose expressive watercolor painting, impressionistic cinematic mood",
+    tech:  "soft watercolor bleeds, luminous washes, delicate linework, artistic loose brushwork",
+  },
+  {
+    label: "soviet_constructivist",
+    base:  "bold Soviet constructivist propaganda poster style, strong geometric composition, dramatic angular figures",
+    tech:  "limited bold color palette, strong diagonal lines, high contrast geometric shapes",
+  },
+  {
+    label: "modern_art_house",
+    base:  "modern art house film poster, clean bold photographic composition, contemporary cinematic design",
+    tech:  "stark contrast, negative space, single dominant color, sharp clean lines",
+  },
+];
+
 // ─── Prompt builder ───────────────────────────────────────────────────────────
 function buildPrompt(title, year, type, genreIds, overview) {
   const ids        = (genreIds || "").split(",").map(Number).filter(Boolean);
@@ -142,39 +196,28 @@ function buildPrompt(title, year, type, genreIds, overview) {
   const primary    = genreNames[0] || "default";
   const s          = GENRE_STYLES[primary] || GENRE_STYLES.default;
   const mediaLabel = type === "series" ? "TV series" : "film";
-  const plotHint   = overview ? overview.substring(0, 100) : "";
+  const plotHint   = overview ? overview.substring(0, 120) : "";
+
+  // Title hash ile her film için deterministik ama farklı bir artistik stil seç
+  const titleHash = [...(title || "x")].reduce((a, c) => a + c.charCodeAt(0), 0);
+  const artStyle  = ARTISTIC_STYLES[titleHash % ARTISTIC_STYLES.length];
 
   const prompt = [
-    // Temel stil — gerçekçi sinematik fotoğraf
-    "ultra-realistic cinematic movie poster photograph",
-    "photorealistic hyperdetailed 8K professional film poster",
-
-    // İçerik
-    `poster for the ${mediaLabel} "${title}"${year ? ` (${year})` : ""}`,
-    plotHint ? `visual theme: ${plotHint}` : "",
-
-    // Tür'e özgü atmosfer
+    artStyle.base,
+    `movie poster for the ${mediaLabel} "${title}"${year ? ` (${year})` : ""}`,
+    plotHint ? `scene inspired by: ${plotHint}` : "",
     `mood: ${s.mood}`,
     `color palette: ${s.palette}`,
-    `lighting: ${s.lighting}`,
-
-    // Karakter kalitesi
-    "photorealistic human characters with sharp detailed faces",
-    "cinematic depth of field, sharp foreground soft background",
-    "professional Hollywood movie poster composition",
-    "dramatic hero shot, characters in powerful poses",
-
-    // Teknik kalite
-    "shot on ARRI camera, anamorphic lens flare",
-    "cinematic color grading, deep blacks, rich shadows",
-    "portrait 2:3 aspect ratio",
-
-    // Negatif
-    "NO text, NO title, NO watermark, NO cartoon, NO illustration, NO painting, NO anime, NO vintage, NO retro, NO flat design"
+    artStyle.tech,
+    "portrait orientation 2:3 aspect ratio",
+    "dramatic cinematic composition with compelling characters",
+    "professional poster layout, visually striking, unique design",
+    "NOT yellow background, NOT flat minimalist, NOT generic repetitive style"
   ].filter(Boolean).join(", ");
 
-  return { prompt, styleLabel: primary };
+  return { prompt, styleLabel: `${primary}_${artStyle.label}` };
 }
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -266,32 +309,6 @@ async function uploadToCloudinary(title, year, buffer) {
   const json = await res.json();
   console.log(`[Cloudinary] Uploaded: ${json.public_id} (${json.bytes} bytes)`);
   return json.secure_url;
-}
-
-// ─── Prompt builder ───────────────────────────────────────────────────────────
-
-function buildPrompt(title, year, type, genreIds, overview) {
-  const ids        = (genreIds || "").split(",").map(Number).filter(Boolean);
-  const genreNames = ids.map(id => GENRE_MAP[id]).filter(Boolean);
-  const primary    = genreNames[0] || "drama";
-  const style      = GENRE_STYLES[primary] || "classic 1950s Hollywood painted movie poster, rich warm palette, dramatic characters, cinematic composition, bold vintage typography";
-  const plotHint   = overview ? overview.substring(0, 120) : "";
-  const mediaLabel = type === "series" ? "TV series" : "film";
-
-  const prompt = [
-    style,
-    `movie poster for the ${mediaLabel} "${title}"${year ? ` (${year})` : ""}`,
-    plotHint ? `scene inspired by: ${plotHint}` : "",
-    "portrait orientation 2:3",
-    "highly detailed hand-painted illustration",
-    "dramatic cinematic composition with characters",
-    "vintage tagline at bottom",
-    "professional vintage movie poster layout",
-    "NOT flat design, NOT yellow background, NOT minimalist, NOT comic book flat outline",
-    "rich deep colors, strong cinematic contrast, painterly oil texture"
-  ].filter(Boolean).join(", ");
-
-  return { prompt, styleLabel: primary };
 }
 
 // ─── Replicate generation ─────────────────────────────────────────────────────
