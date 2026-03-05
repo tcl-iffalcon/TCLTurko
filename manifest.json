@@ -13,25 +13,25 @@
       "type": "movie",
       "id": "tclturko_tr_trending_movies",
       "name": "🇹🇷 Türkiye Trend Filmler",
-      "extra": [{ "name": "skip", "isRequired": false }]
+      "extra": [{ "name": "skip", "isRequired": false, "options": ["0", "20", "40"] }]
     },
     {
       "type": "series",
       "id": "tclturko_tr_trending_series",
       "name": "🇹🇷 Türkiye Trend Diziler",
-      "extra": [{ "name": "skip", "isRequired": false }]
+      "extra": [{ "name": "skip", "isRequired": false, "options": ["0", "20", "40"] }]
     },
     {
       "type": "movie",
       "id": "tclturko_popular_movies",
       "name": "⭐ Popüler Filmler",
-      "extra": [{ "name": "skip", "isRequired": false }]
+      "extra": [{ "name": "skip", "isRequired": false, "options": ["0", "20", "40"] }]
     },
     {
       "type": "series",
       "id": "tclturko_popular_series",
       "name": "⭐ Popüler Diziler",
-      "extra": [{ "name": "skip", "isRequired": false }]
+      "extra": [{ "name": "skip", "isRequired": false, "options": ["0", "20", "40"] }]
     }
   ],
   "behaviorHints": {
