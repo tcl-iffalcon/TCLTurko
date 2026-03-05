@@ -81,7 +81,7 @@ async function fetchMeta(id, type, baseUrl) {
         : (item.episode_run_time?.[0] ? `${item.episode_run_time[0]} dk` : null),
     };
 
-    cache.set(cacheKey, meta, 60 * 60 * 6); // 6 saat
+    cache.set(cacheKey, meta, 60 * 10); // 10 dakika
     return meta;
   } catch (err) {
     console.error(`[Meta] Error (${id}):`, err.message);
