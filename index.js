@@ -198,7 +198,7 @@ app.get("/ai-poster", async (req, res) => {
     catch { return fallback ? res.redirect(fallback) : res.status(500).send("Generation failed"); }
   }
 
-  triggerPoster(title, year, type, genres, overview);
+  triggerPoster(title, year, type, genres, overview, fallback || null);
   try {
     const pending = AI_PENDING.get(key);
     if (pending) await pending;
