@@ -139,53 +139,53 @@ const GENRE_STYLES = {
 const ARTISTIC_STYLES = [
   {
     label: "vintage_painted",
-    base:  "classic 1950s Hollywood hand-painted movie poster, oil painting illustration style, rich warm brushstrokes, dramatic painted characters",
-    tech:  "painterly oil texture, warm amber palette, vintage grain overlay",
+    base:  "classic 1950s Hollywood hand-painted movie poster, oil painting illustration style, dramatic painted characters",
+    tech:  "painterly oil texture, vintage grain overlay, period-accurate illustration",
   },
   {
     label: "retro_pulp",
-    base:  "1960s retro pulp fiction paperback cover art, bold graphic illustration, high contrast flat colors, dramatic pulp composition",
-    tech:  "strong ink outlines, flat cel shading, bold red and yellow accents, halftone texture",
+    base:  "1960s retro pulp fiction paperback cover art, bold graphic illustration, dramatic pulp composition",
+    tech:  "strong ink outlines, flat cel shading, halftone texture, pulp paperback aesthetic",
   },
   {
     label: "noir_illustrated",
-    base:  "dark noir illustrated movie poster, moody ink wash illustration, dramatic black and white with selective color, hard-boiled aesthetic",
-    tech:  "heavy black shadows, single color accent, wet street reflections, noir atmosphere",
+    base:  "dark noir movie poster, moody ink wash illustration, black and white with selective color, hard-boiled aesthetic",
+    tech:  "heavy shadows, wet street reflections, heavy vignette, noir atmosphere",
   },
   {
     label: "epic_photorealistic",
-    base:  "ultra-realistic cinematic movie poster photograph, photorealistic hyperdetailed 8K professional film poster, shot on ARRI camera anamorphic lens",
+    base:  "ultra-realistic cinematic movie poster photograph, photorealistic 8K professional film poster, shot on ARRI camera anamorphic lens",
     tech:  "dramatic rim lighting, deep blacks, cinematic color grading, anamorphic lens flare",
   },
   {
     label: "painterly_epic",
-    base:  "epic fantasy concept art painting style movie poster, highly detailed digital oil painting, dramatic painterly illustration",
-    tech:  "rich jewel tones, dramatic god rays, painterly brush detail, epic cinematic scale",
+    base:  "epic concept art painting style movie poster, highly detailed digital oil painting, dramatic painterly illustration",
+    tech:  "rich jewel tones matching story mood, dramatic god rays, painterly brush detail",
   },
   {
     label: "retro_scifi",
-    base:  "1970s retro science fiction movie poster, vintage sci-fi paperback illustration, chrome and neon palette, retrofuturism aesthetic",
-    tech:  "chrome highlights, deep space blacks, neon glow, vintage halftone dots",
+    base:  "1970s retro science fiction movie poster, vintage sci-fi paperback illustration, retrofuturism aesthetic",
+    tech:  "chrome highlights, neon glow, vintage halftone dots, retro future design",
   },
   {
     label: "graphic_novel",
-    base:  "graphic novel comic book movie poster, bold sequential art illustration style, strong dynamic composition",
-    tech:  "bold ink lines, vibrant flat colors with texture, dramatic panel composition",
+    base:  "graphic novel movie poster, bold sequential art illustration, strong dynamic composition, Frank Miller inspired",
+    tech:  "bold ink lines, dramatic panel composition, high contrast graphic art",
   },
   {
     label: "watercolor_atmospheric",
     base:  "atmospheric watercolor illustration movie poster, loose expressive watercolor painting, impressionistic cinematic mood",
-    tech:  "soft watercolor bleeds, luminous washes, delicate linework, artistic loose brushwork",
+    tech:  "soft watercolor bleeds, luminous washes, delicate linework, painterly texture",
   },
   {
     label: "soviet_constructivist",
-    base:  "bold Soviet constructivist propaganda poster style, strong geometric composition, dramatic angular figures",
-    tech:  "limited bold color palette, strong diagonal lines, high contrast geometric shapes",
+    base:  "bold constructivist propaganda poster style, strong geometric composition, dramatic angular figures, Rodchenko inspired",
+    tech:  "strong diagonal lines, high contrast geometric shapes, flat graphic boldness",
   },
   {
     label: "modern_art_house",
-    base:  "modern art house film poster, clean bold photographic composition, contemporary cinematic design",
-    tech:  "stark contrast, negative space, single dominant color, sharp clean lines",
+    base:  "modern art house film poster, clean bold photographic composition, A24 film aesthetic",
+    tech:  "stark contrast, generous negative space, minimal but striking design",
   },
 ];
 
@@ -213,12 +213,11 @@ function buildPrompt(title, year, type, genreIds, overview, cast = [], keywords 
     castHint,
     keywordHint,
     `mood: ${s.mood}`,
-    `color palette: ${s.palette}`,
     artStyle.tech,
     "portrait orientation 2:3 aspect ratio",
     "dramatic cinematic composition with compelling characters",
     "professional poster layout, visually striking, unique design",
-    "NOT yellow background, NOT flat minimalist, NOT generic repetitive style"
+    "avoid: yellow backgrounds, orange backgrounds, red backgrounds, warm toned backgrounds, fire imagery unless story requires it, generic Hollywood poster clichés, repetitive color schemes, monochromatic warm palettes"
   ].filter(Boolean).join(", ");
 
   return { prompt, styleLabel: `${primary}_${artStyle.label}` };
@@ -395,19 +394,19 @@ async function _executeGenerate(title, year, type, genreIds, overview, tmdbPoste
   }
 
   if (!modelUrl) {
-    // Tüm diğer türler: flux-schnell text2img — zengin prompt ile özgün poster
-    modelUrl  = "https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions";
+    // Tüm türler: flux-dev text2img — prompt takibi güçlü, stil çeşitliliği gerçek
+    modelUrl  = "https://api.replicate.com/v1/models/black-forest-labs/flux-dev/predictions";
     inputBody = {
       prompt:              basePrompt,
       width:               512,
       height:              768,
-      num_inference_steps: 4,
+      num_inference_steps: 28,
+      guidance:            3.5,
       seed,
       output_format:       "jpg",
       output_quality:      90,
-      go_fast:             true,
     };
-    console.log(`[AI] flux-schnell text2img (style: ${styleLabel}): "${title}"`);
+    console.log(`[AI] flux-dev text2img (style: ${styleLabel}): "${title}"`);
   }
 
   const createRes = await fetch(modelUrl, {
