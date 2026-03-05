@@ -190,22 +190,28 @@ const ARTISTIC_STYLES = [
 ];
 
 // ─── Prompt builder ───────────────────────────────────────────────────────────
-function buildPrompt(title, year, type, genreIds, overview) {
+function buildPrompt(title, year, type, genreIds, overview, cast = [], keywords = []) {
   const ids        = (genreIds || "").split(",").map(Number).filter(Boolean);
   const genreNames = ids.map(id => GENRE_MAP[id]).filter(Boolean);
   const primary    = genreNames[0] || "default";
   const s          = GENRE_STYLES[primary] || GENRE_STYLES.default;
   const mediaLabel = type === "series" ? "TV series" : "film";
-  const plotHint   = overview ? overview.substring(0, 120) : "";
+  const plotHint   = overview ? overview.substring(0, 150) : "";
 
   // Title hash ile her film için deterministik ama farklı bir artistik stil seç
   const titleHash = [...(title || "x")].reduce((a, c) => a + c.charCodeAt(0), 0);
   const artStyle  = ARTISTIC_STYLES[titleHash % ARTISTIC_STYLES.length];
 
+  // Cast ve keyword zenginleştirmesi
+  const castHint    = cast.length    ? `featuring characters inspired by ${cast.join(", ")}` : "";
+  const keywordHint = keywords.length ? `themes: ${keywords.slice(0, 4).join(", ")}` : "";
+
   const prompt = [
     artStyle.base,
     `movie poster for the ${mediaLabel} "${title}"${year ? ` (${year})` : ""}`,
-    plotHint ? `scene inspired by: ${plotHint}` : "",
+    plotHint ? `story: ${plotHint}` : "",
+    castHint,
+    keywordHint,
     `mood: ${s.mood}`,
     `color palette: ${s.palette}`,
     artStyle.tech,
@@ -311,10 +317,41 @@ async function uploadToCloudinary(title, year, buffer) {
   return json.secure_url;
 }
 
+// ─── TMDB enrichment: credits + keywords ─────────────────────────────────────
+
+async function fetchTmdbEnrichment(tmdbId, mediaType) {
+  if (!tmdbId) return { cast: [], keywords: [] };
+  const tmdbType = mediaType === "series" ? "tv" : "movie";
+  const kwField  = mediaType === "series" ? "results" : "keywords";
+  try {
+    const [creditsRes, kwRes] = await Promise.all([
+      fetch(`${TMDB_BASE}/${tmdbType}/${tmdbId}/credits?api_key=${TMDB_API_KEY}`, { timeout: 8000 }),
+      fetch(`${TMDB_BASE}/${tmdbType}/${tmdbId}/keywords?api_key=${TMDB_API_KEY}`, { timeout: 8000 }),
+    ]);
+    const [creditsData, kwData] = await Promise.all([creditsRes.json(), kwRes.json()]);
+    const cast     = (creditsData.cast || []).slice(0, 3).map(c => c.name);
+    const keywords = (kwData[kwField] || []).slice(0, 6).map(k => k.name);
+    return { cast, keywords };
+  } catch (err) {
+    console.warn(`[AI] TMDB enrichment failed: ${err.message}`);
+    return { cast: [], keywords: [] };
+  }
+}
+
 // ─── Replicate generation ─────────────────────────────────────────────────────
 
-async function _executeGenerate(title, year, type, genreIds, overview, tmdbPosterUrl) {
-  const { prompt, styleLabel } = buildPrompt(title, year, type, genreIds, overview);
+const TMDB_BASE      = `https://api.themoviedb.org/3`;
+const ANIMATION_GENRE = 16;
+
+async function _executeGenerate(title, year, type, genreIds, overview, tmdbPosterUrl, tmdbId) {
+  const ids         = (genreIds || "").split(",").map(Number).filter(Boolean);
+  const isAnimation = ids.includes(ANIMATION_GENRE);
+
+  // TMDB credits + keywords ile prompt zenginleştir
+  const mediaType = type === "series" ? "tv" : "movie";
+  const { cast, keywords } = await fetchTmdbEnrichment(tmdbId, mediaType);
+
+  const { prompt: basePrompt, styleLabel } = buildPrompt(title, year, type, genreIds, overview, cast, keywords);
   const seed = Math.abs([...(title || "x")].reduce((a, c) => a + c.charCodeAt(0), 0));
 
   const now     = Date.now();
@@ -326,23 +363,22 @@ async function _executeGenerate(title, year, type, genreIds, overview, tmdbPoste
   }
   lastRequestTime = Date.now();
 
-  // img2img: TMDB poster varsa flux-dev ile style transfer, yoksa flux-schnell ile text2img
   let modelUrl, inputBody;
 
-  if (tmdbPosterUrl) {
+  if (isAnimation && tmdbPosterUrl) {
+    // Animasyon: flux-dev img2img — TMDB karakterlerini koru, stil uygula
     try {
-      console.log(`[AI] img2img — downloading TMDB poster: ${tmdbPosterUrl}`);
+      console.log(`[AI] Animation img2img — downloading TMDB poster: ${tmdbPosterUrl}`);
       const tmdbRes = await fetch(tmdbPosterUrl, { timeout: 10000 });
       if (!tmdbRes.ok) throw new Error(`TMDB poster fetch failed: ${tmdbRes.status}`);
-      const tmdbBuf    = Buffer.from(await tmdbRes.arrayBuffer());
-      const b64        = tmdbBuf.toString("base64");
-      const dataUri    = `data:image/jpeg;base64,${b64}`;
+      const b64     = Buffer.from(await tmdbRes.arrayBuffer()).toString("base64");
+      const dataUri = `data:image/jpeg;base64,${b64}`;
 
       modelUrl  = "https://api.replicate.com/v1/models/black-forest-labs/flux-dev/predictions";
       inputBody = {
-        prompt:              `${prompt}, reimagined as a unique artistic movie poster, preserve character faces and composition`,
+        prompt:              `${basePrompt}, vibrant animated movie poster style, preserve character designs and colors`,
         image:               dataUri,
-        prompt_strength:     0.75,   // 0=orijinal, 1=tam yeni — 0.75 iyi denge
+        prompt_strength:     0.70,
         width:               512,
         height:              768,
         num_inference_steps: 28,
@@ -351,17 +387,18 @@ async function _executeGenerate(title, year, type, genreIds, overview, tmdbPoste
         output_format:       "jpg",
         output_quality:      90,
       };
-      console.log(`[AI] Using flux-dev img2img (style: ${styleLabel})`);
+      console.log(`[AI] flux-dev img2img for animation: "${title}"`);
     } catch (err) {
-      console.warn(`[AI] img2img prep failed, falling back to text2img: ${err.message}`);
-      tmdbPosterUrl = null;
+      console.warn(`[AI] Animation img2img failed, falling back: ${err.message}`);
+      isAnimation && (modelUrl = null);
     }
   }
 
-  if (!tmdbPosterUrl) {
+  if (!modelUrl) {
+    // Tüm diğer türler: flux-schnell text2img — zengin prompt ile özgün poster
     modelUrl  = "https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions";
     inputBody = {
-      prompt,
+      prompt:              basePrompt,
       width:               512,
       height:              768,
       num_inference_steps: 4,
@@ -370,7 +407,7 @@ async function _executeGenerate(title, year, type, genreIds, overview, tmdbPoste
       output_quality:      90,
       go_fast:             true,
     };
-    console.log(`[AI] Using flux-schnell text2img (style: ${styleLabel})`);
+    console.log(`[AI] flux-schnell text2img (style: ${styleLabel}): "${title}"`);
   }
 
   const createRes = await fetch(modelUrl, {
@@ -423,7 +460,7 @@ async function _executeGenerate(title, year, type, genreIds, overview, tmdbPoste
   return buffer;
 }
 
-async function generatePoster(title, year, type, genreIds, overview, tmdbPosterUrl) {
+async function generatePoster(title, year, type, genreIds, overview, tmdbPosterUrl, tmdbId) {
   if (!REPLICATE_TOKEN)        throw new Error("REPLICATE_TOKEN not set");
   if (replicateQuotaExhausted) throw new Error("Replicate quota exhausted");
 
@@ -431,7 +468,7 @@ async function generatePoster(title, year, type, genreIds, overview, tmdbPosterU
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       console.log(`[AI] Generating (attempt ${attempt}/${MAX_RETRIES}): "${title}"`);
-      return await _executeGenerate(title, year, type, genreIds, overview, tmdbPosterUrl);
+      return await _executeGenerate(title, year, type, genreIds, overview, tmdbPosterUrl, tmdbId);
     } catch (err) {
       if (err.status === 402) {
         replicateQuotaExhausted = true;
@@ -455,7 +492,7 @@ async function generatePoster(title, year, type, genreIds, overview, tmdbPosterU
 
 // ─── Main: trigger background generation ─────────────────────────────────────
 
-function triggerPoster(title, year, type, genreIds, overview, tmdbPosterUrl) {
+function triggerPoster(title, year, type, genreIds, overview, tmdbPosterUrl, tmdbId) {
   if (!title) return;
   const key = posterKey(title, year);
   if (AI_PENDING.has(key)) return;
@@ -470,7 +507,7 @@ function triggerPoster(title, year, type, genreIds, overview, tmdbPosterUrl) {
           return;
         }
 
-        const buf = await generatePoster(title, year, type, genreIds, overview, tmdbPosterUrl);
+        const buf = await generatePoster(title, year, type, genreIds, overview, tmdbPosterUrl, tmdbId);
         await uploadToCloudinary(title, year, buf);
         console.log(`[AI] Stored in Cloudinary: ${key}`);
         resolve();
