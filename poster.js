@@ -313,7 +313,7 @@ async function uploadToCloudinary(title, year, buffer) {
 
 // ─── Replicate generation ─────────────────────────────────────────────────────
 
-async function _executeGenerate(title, year, type, genreIds, overview) {
+async function _executeGenerate(title, year, type, genreIds, overview, tmdbPosterUrl) {
   const { prompt, styleLabel } = buildPrompt(title, year, type, genreIds, overview);
   const seed = Math.abs([...(title || "x")].reduce((a, c) => a + c.charCodeAt(0), 0));
 
@@ -326,25 +326,61 @@ async function _executeGenerate(title, year, type, genreIds, overview) {
   }
   lastRequestTime = Date.now();
 
-  const createRes = await fetch("https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions", {
+  // img2img: TMDB poster varsa flux-dev ile style transfer, yoksa flux-schnell ile text2img
+  let modelUrl, inputBody;
+
+  if (tmdbPosterUrl) {
+    try {
+      console.log(`[AI] img2img — downloading TMDB poster: ${tmdbPosterUrl}`);
+      const tmdbRes = await fetch(tmdbPosterUrl, { timeout: 10000 });
+      if (!tmdbRes.ok) throw new Error(`TMDB poster fetch failed: ${tmdbRes.status}`);
+      const tmdbBuf    = Buffer.from(await tmdbRes.arrayBuffer());
+      const b64        = tmdbBuf.toString("base64");
+      const dataUri    = `data:image/jpeg;base64,${b64}`;
+
+      modelUrl  = "https://api.replicate.com/v1/models/black-forest-labs/flux-dev/predictions";
+      inputBody = {
+        prompt:              `${prompt}, reimagined as a unique artistic movie poster, preserve character faces and composition`,
+        image:               dataUri,
+        prompt_strength:     0.75,   // 0=orijinal, 1=tam yeni — 0.75 iyi denge
+        width:               512,
+        height:              768,
+        num_inference_steps: 28,
+        guidance:            3.5,
+        seed,
+        output_format:       "jpg",
+        output_quality:      90,
+      };
+      console.log(`[AI] Using flux-dev img2img (style: ${styleLabel})`);
+    } catch (err) {
+      console.warn(`[AI] img2img prep failed, falling back to text2img: ${err.message}`);
+      tmdbPosterUrl = null;
+    }
+  }
+
+  if (!tmdbPosterUrl) {
+    modelUrl  = "https://api.replicate.com/v1/models/black-forest-labs/flux-schnell/predictions";
+    inputBody = {
+      prompt,
+      width:               512,
+      height:              768,
+      num_inference_steps: 4,
+      seed,
+      output_format:       "jpg",
+      output_quality:      90,
+      go_fast:             true,
+    };
+    console.log(`[AI] Using flux-schnell text2img (style: ${styleLabel})`);
+  }
+
+  const createRes = await fetch(modelUrl, {
     method:  "POST",
     headers: {
       "Authorization": `Bearer ${REPLICATE_TOKEN}`,
       "Content-Type":  "application/json",
       "Prefer":        "wait"
     },
-    body: JSON.stringify({
-      input: {
-        prompt,
-        width:               512,
-        height:              768,
-        num_inference_steps: 4,
-        seed,
-        output_format:       "jpg",
-        output_quality:      90,
-        go_fast:             true
-      }
-    })
+    body: JSON.stringify({ input: inputBody })
   });
 
   if (!createRes.ok) {
@@ -387,7 +423,7 @@ async function _executeGenerate(title, year, type, genreIds, overview) {
   return buffer;
 }
 
-async function generatePoster(title, year, type, genreIds, overview) {
+async function generatePoster(title, year, type, genreIds, overview, tmdbPosterUrl) {
   if (!REPLICATE_TOKEN)        throw new Error("REPLICATE_TOKEN not set");
   if (replicateQuotaExhausted) throw new Error("Replicate quota exhausted");
 
@@ -395,7 +431,7 @@ async function generatePoster(title, year, type, genreIds, overview) {
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       console.log(`[AI] Generating (attempt ${attempt}/${MAX_RETRIES}): "${title}"`);
-      return await _executeGenerate(title, year, type, genreIds, overview);
+      return await _executeGenerate(title, year, type, genreIds, overview, tmdbPosterUrl);
     } catch (err) {
       if (err.status === 402) {
         replicateQuotaExhausted = true;
@@ -419,7 +455,7 @@ async function generatePoster(title, year, type, genreIds, overview) {
 
 // ─── Main: trigger background generation ─────────────────────────────────────
 
-function triggerPoster(title, year, type, genreIds, overview) {
+function triggerPoster(title, year, type, genreIds, overview, tmdbPosterUrl) {
   if (!title) return;
   const key = posterKey(title, year);
   if (AI_PENDING.has(key)) return;
@@ -434,7 +470,7 @@ function triggerPoster(title, year, type, genreIds, overview) {
           return;
         }
 
-        const buf = await generatePoster(title, year, type, genreIds, overview);
+        const buf = await generatePoster(title, year, type, genreIds, overview, tmdbPosterUrl);
         await uploadToCloudinary(title, year, buf);
         console.log(`[AI] Stored in Cloudinary: ${key}`);
         resolve();
