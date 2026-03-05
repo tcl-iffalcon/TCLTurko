@@ -180,7 +180,7 @@ app.get("/:config/manifest.json",   (req, res) => res.json(baseManifest));
 // ─── AI Poster ────────────────────────────────────────────────────────────────
 
 app.get("/ai-poster", async (req, res) => {
-  const { title, year, type, genres, overview, fallback } = req.query;
+  const { title, year, type, genres, overview, fallback, tmdbId } = req.query;
   if (!title) return fallback ? res.redirect(fallback) : res.status(400).send("Missing title");
 
   const key    = posterKey(title, year);
@@ -198,7 +198,7 @@ app.get("/ai-poster", async (req, res) => {
     catch { return fallback ? res.redirect(fallback) : res.status(500).send("Generation failed"); }
   }
 
-  triggerPoster(title, year, type, genres, overview, fallback || null);
+  triggerPoster(title, year, type, genres, overview, fallback || null, tmdbId || null);
   try {
     const pending = AI_PENDING.get(key);
     if (pending) await pending;
