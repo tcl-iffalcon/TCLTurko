@@ -49,8 +49,16 @@ async function tmdbToStremio(item, type, baseUrl) {
   };
 }
 
+const MAX_CATALOG_ITEMS = 50; // Her katalog için maksimum içerik sayısı
+
 // TMDB catalog çek
 async function fetchCatalog(catalogId, type, skip = 0, baseUrl) {
+  // 50 item limitini aş, boş döndür
+  if (skip >= MAX_CATALOG_ITEMS) {
+    console.log(`[Catalog] Limit aşıldı (skip=${skip}), boş döndürülüyor`);
+    return [];
+  }
+
   const cacheKey = `catalog:${catalogId}:${type}:${skip}`;
   const cached   = cache.get(cacheKey);
   if (cached) { console.log(`[Catalog] Cache hit: ${cacheKey}`); return cached; }
@@ -58,9 +66,14 @@ async function fetchCatalog(catalogId, type, skip = 0, baseUrl) {
   const page     = Math.floor(skip / 20) + 1;
   const tmdbType = type === "series" ? "tv" : "movie";
 
-  const endpoint = catalogId.includes("trending")
-    ? `${TMDB_BASE}/trending/${tmdbType}/week?api_key=${TMDB_API_KEY}&page=${page}`
-    : `${TMDB_BASE}/${tmdbType}/popular?api_key=${TMDB_API_KEY}&page=${page}`;
+  let endpoint;
+  if (catalogId.includes("tr_trending")) {
+    endpoint = `${TMDB_BASE}/trending/${tmdbType}/week?api_key=${TMDB_API_KEY}&page=${page}&region=TR&language=tr-TR`;
+  } else if (catalogId.includes("trending")) {
+    endpoint = `${TMDB_BASE}/trending/${tmdbType}/week?api_key=${TMDB_API_KEY}&page=${page}`;
+  } else {
+    endpoint = `${TMDB_BASE}/${tmdbType}/popular?api_key=${TMDB_API_KEY}&page=${page}`;
+  }
 
   console.log(`[Catalog] Fetching: ${endpoint}`);
 
@@ -68,10 +81,14 @@ async function fetchCatalog(catalogId, type, skip = 0, baseUrl) {
   const data = await res.json();
   if (!data.results) return [];
 
+  // Kaç item daha alabiliriz?
+  const remaining = MAX_CATALOG_ITEMS - skip;
+  const filtered  = data.results
+    .filter(item => item.poster_path)
+    .slice(0, remaining);
+
   const metas = await Promise.all(
-    data.results
-      .filter(item => item.poster_path)
-      .map(item => tmdbToStremio(item, tmdbType, baseUrl))
+    filtered.map(item => tmdbToStremio(item, tmdbType, baseUrl))
   );
 
   cache.set(cacheKey, metas, 60 * 30); // 30 dakika cache
