@@ -26,6 +26,7 @@ async function tmdbToStremio(item, type, baseUrl) {
         genres:   (item.genre_ids || []).join(","),
         overview: item.overview || "",
         fallback: tmdbFallback || "",
+        tmdbId:   String(item.id || ""),
       }).toString()
     : tmdbFallback;
 
