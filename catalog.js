@@ -50,7 +50,7 @@ async function tmdbToStremio(item, type, baseUrl) {
   };
 }
 
-const MAX_CATALOG_ITEMS = 50; // Her katalog için maksimum içerik sayısı
+const MAX_CATALOG_ITEMS = 25; // Her katalog için maksimum içerik sayısı
 
 // TMDB catalog çek
 async function fetchCatalog(catalogId, type, skip = 0, baseUrl) {
