@@ -117,8 +117,8 @@ app.get("/configure", (req, res) => {
         <div class="rule-dot" style="opacity:.3"></div>
       </div>
       <p class="tagline">
-        Türkçe dublaj içeriklere <strong>🇹🇷 bayrak</strong> ekler,<br>
-        posterleri <strong>yapay zeka</strong> ile oluşturur.<br>
+        <strong>Türkçe dublaj ve altyazı </strong>seçenekleri olan,kataloğunda Türkçe dublaj içeriklere özel <strong>🇹🇷 bayrak</strong> olan,<br>
+        posterleri <strong>AI</strong> aracılığıyla yeniden üreten Nuvio eklentisi.<br>
         <strong>TCLTVTURK</strong> ekibi tarafından ♥️ ile yapıldı.
       </p>
       <div class="card">
