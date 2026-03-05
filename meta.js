@@ -54,6 +54,7 @@ async function fetchMeta(id, type, baseUrl) {
           genres:   (item.genres || []).map(g => g.id).join(","),
           overview: item.overview || "",
           fallback: tmdbFallback || "",
+          tmdbId:   String(tmdbId || ""),
         }).toString()
       : tmdbFallback;
 
